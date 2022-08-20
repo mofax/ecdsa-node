@@ -1,50 +1,70 @@
-const BinaryAscii = require("./utils/binary")
-const Base64 = require("./utils/base")
-const der = require("./utils/der")
+// @ts-check
 
+const BinaryAscii = require("./utils/binary");
+const Base64 = require("./utils/base");
+const der = require("./utils/der");
 
 class Signature {
-    constructor (r, s) {
+    /**
+     *
+     * @param {bigInt.BigInteger} r
+     * @param {bigInt.BigInteger} s
+     */
+    constructor(r, s) {
         this.r = r;
         this.s = s;
     }
 
-    toDer () {
-        return der.encodeSequence(der.encodeInteger(this.r), der.encodeInteger(this.s));
+    toDer() {
+        return der.encodeSequence(
+            der.encodeInteger(this.r),
+            der.encodeInteger(this.s)
+        );
     }
 
-    toBase64 () {
+    toBase64() {
         return Base64.encode(this.toDer());
     }
 
-    static fromDer (string) {
+    /**
+     * @param {string} string
+     */
+    static fromDer(string) {
         let result = der.removeSequence(string);
         let rs = result[0];
         let empty = result[1];
         if (empty) {
-            throw new Error("trailing junk after DER signature: " + BinaryAscii.hexFromBinary(empty));
+            throw new Error(
+                "trailing junk after DER signature: " +
+                    BinaryAscii.hexFromBinary(empty)
+            );
         }
 
-        result = der.removeInteger(rs);
-        let r = result[0];
-        let rest = result[1];
+        let result1 = der.removeInteger(rs);
+        let r = result1[0];
+        let rest = result1[1];
 
-        result = der.removeInteger(rest);
-        let s = result[0];
-        empty = result[1];
+        let result2 = der.removeInteger(rest);
+        let s = result2[0];
+        let empty2 = result2[1];
 
-        if (empty) {
-            throw new Error("trailing junk after DER numbers: " + BinaryAscii.hexFromBinary(empty));
+        if (empty2) {
+            throw new Error(
+                "trailing junk after DER numbers: " +
+                    BinaryAscii.hexFromBinary(empty)
+            );
         }
 
-        return new Signature(r, s)
+        return new Signature(r, s);
     }
 
-    static fromBase64 (string) {
+    /**
+     * @param {string} string
+     */
+    static fromBase64(string) {
         let derString = Base64.decode(string);
         return this.fromDer(derString);
     }
 }
-
 
 exports.Signature = Signature;
